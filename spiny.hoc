@@ -1,0 +1,74 @@
+begintemplate sadex
+	public ske,skeadapex,x,y,z,c,sum
+	public record_spiny,connect2target,apc,ap
+	create ske
+	objref skeadapex,record_spiny,apc,ap
+	proc init(){
+		create ske
+	ske{
+			diam=2.4
+			skeadapex=new SpinySkellateNeuron(0.5)
+			record_spiny= new Vector()
+			ap=new Vector()
+			apc= new APCount(0.5)
+			apc.thresh=-20
+			x=y=z=0
+			c=0
+			sum=0
+			celsius=26
+		}
+	}
+obfunc connect2target() {localobj nc
+	ske nc=new NetCon(&skeadapex.vv,$o1)
+	nc.threshold=10
+	if(numarg()==2) {$o2=nc}
+	return nc
+}
+
+endtemplate sadex
+
+objref cell1, spiny_list
+spiny_list = new List()
+cell1 = new sadex()
+spiny_list.append(cell1)
+spiny_list.object(0).record_spiny.record(&spiny_list.object(0).skeadapex.vv)
+
+objref rpc,nil,pctvec,pcidvec
+pctvec= new Vector()
+pcidvec= new Vector()
+
+for k=0, spiny_list.count-1 {
+spiny_list.object(k).record_spiny.record(&spiny_list.object(k).skeadapex.vv)
+}
+for c=0,spiny_list.count()-1{
+rpc=spiny_list.object(c).connect2target(nil)
+rpc.record(pctvec,pcidvec,c)
+}
+
+tstop = 1000
+dt = 0.025
+objref cvode
+cvode = new CVode()
+cvode.atol(0.001)
+cvode.use_daspk(1)
+cvode_active(1)
+
+spiny_list.object(0).skeadapex.del=0
+spiny_list.object(0).skeadapex.dur=1000
+spiny_list.object(0).skeadapex.amp=0.32
+
+objref g4, g5, g6, g7
+newPlotV()
+g4 = graphItem
+g4.size(0, tstop, -100, 50)
+g4.erase_all
+g4.addvar("spiny_list.object(0).skeadapex.vv", 2, 2)
+
+g4 = graphItem
+g4.size(0, tstop, -100, 50)
+g4.erase_all
+g4.addvar("spiny_list.object(0).skeadapex.vv", 2, 2)
+
+run()
+
+print "Count : ", pctvec.size()

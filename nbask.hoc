@@ -1,0 +1,76 @@
+begintemplate nbkadex
+	public nbasket,nbasketadapex,x,y,z,c,sum
+	public recordnbasket,connect2target,apc,ap
+	create nbasket
+	objref nbasketadapex,recordnbasket,apc,ap
+	proc init(){
+		create nbasket
+		nbasket{
+			diam=2.4
+			nbasketadapex=new NONBASKET(0.5)
+			recordnbasket= new Vector()
+			ap=new Vector()
+			apc= new APCount(0.5)
+			apc.thresh=-20
+			x=y=z=0
+			c=0
+			sum=0
+			celsius=26
+		}
+	}
+obfunc connect2target() {localobj nc
+	nbasket nc=new NetCon(&nbasketadapex.vv,$o1)
+	nc.threshold=-10
+	if(numarg()==2) {$o2=nc}
+	return nc
+}
+
+endtemplate nbkadex
+
+objref cell1,nbasketlist
+nbasketlist=new List()
+cell1=new nbkadex()
+nbasketlist.append(cell1)
+nbasketlist.object(0).recordnbasket.record(&nbasketlist.object(0).nbasketadapex.vv)
+
+objref rpc,nil,pctvec,pcidvec
+pctvec= new Vector()
+pcidvec= new Vector()
+
+for k=0, nbasketlist.count-1 {
+nbasketlist.object(k).recordnbasket.record(&nbasketlist.object(k).nbasketadapex.vv)
+}
+for c=0,nbasketlist.count()-1{
+rpc=nbasketlist.object(c).connect2target(nil)
+rpc.record(pctvec,pcidvec,c)
+}
+
+tstop=1000
+dt=0.025
+objref cvode
+cvode=new CVode()
+cvode.atol(0.001)
+cvode.use_daspk(1)
+cvode_active(1)
+
+nbasketlist.object(0).nbasketadapex.del=0
+nbasketlist.object(0).nbasketadapex.dur=1000
+nbasketlist.object(0).nbasketadapex.amp=0.32
+
+objref g4,g5,g6,g7
+newPlotV()
+g4=graphItem
+g4.size(0,tstop,-100,50)
+g4.erase_all
+g4.addvar("nbasketlist.object(0).nbasketadapex.vv",2,2)
+
+
+
+g4=graphItem
+g4.size(0,tstop,-100,50)
+g4.erase_all
+g4.addvar("nbasketlist.object(0).nbasketadapex.vv",2,2)
+
+run()
+
+print "Count : ", pctvec.size()

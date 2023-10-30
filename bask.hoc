@@ -1,0 +1,76 @@
+begintemplate bkadex
+	public basket,basketadapex,x,y,z,c,sum
+	public recordbasket,connect2target,apc,ap
+	create basket
+	objref basketadapex,recordbasket,apc,ap
+	proc init(){
+		create basket
+		basket{
+			diam=2.4
+			basketadapex=new BASKET(0.5)
+			recordbasket= new Vector()
+			ap=new Vector()
+			apc= new APCount(0.5)
+			apc.thresh=-20
+			x=y=z=0
+			c=0
+			sum=0
+			celsius=26
+		}
+	}
+obfunc connect2target() {localobj nc
+	basket nc=new NetCon(&basketadapex.vv,$o1)
+	nc.threshold=10
+	if(numarg()==2) {$o2=nc}
+	return nc
+}
+
+endtemplate bkadex
+
+objref cell1,basketlist
+basketlist=new List()
+cell1=new bkadex()
+basketlist.append(cell1)
+basketlist.object(0).recordbasket.record(&basketlist.object(0).basketadapex.vv)
+
+objref rpc,nil,pctvec,pcidvec
+pctvec= new Vector()
+pcidvec= new Vector()
+
+for k=0, basketlist.count-1 {
+basketlist.object(k).recordbasket.record(&basketlist.object(k).basketadapex.vv)
+}
+for c=0,basketlist.count()-1{
+rpc=basketlist.object(c).connect2target(nil)
+rpc.record(pctvec,pcidvec,c)
+}
+
+tstop=1000
+dt=0.025
+objref cvode
+cvode=new CVode()
+cvode.atol(0.001)
+cvode.use_daspk(1)
+cvode_active(1)
+
+basketlist.object(0).basketadapex.del=0
+basketlist.object(0).basketadapex.dur=1000
+basketlist.object(0).basketadapex.amp=0.32
+
+objref g4,g5,g6,g7
+newPlotV()
+g4=graphItem
+g4.size(0,tstop,-100,50)
+g4.erase_all
+g4.addvar("basketlist.object(0).basketadapex.vv",2,2)
+
+
+
+g4=graphItem
+g4.size(0,tstop,-100,50)
+g4.erase_all
+g4.addvar("basketlist.object(0).basketadapex.vv",2,2)
+
+run()
+
+print "Count : ", pctvec.size()
